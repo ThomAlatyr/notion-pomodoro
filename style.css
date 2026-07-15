@@ -137,7 +137,7 @@ button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent
 .controls {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  width: min(100%, 510px);
+  width: min(72%, 368px);
   margin: -4px auto 0;
 }
 
@@ -155,15 +155,15 @@ button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent
 
 .control:hover:not(:disabled) { color: var(--ink); }
 .control:disabled { cursor: default; opacity: 0.3; }
-.control:first-child { justify-self: start; text-align: left; }
-.control:last-child { justify-self: end; text-align: right; }
+.control:first-child,
+.control:last-child { justify-self: center; text-align: center; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 @media (max-height: 650px) {
   .dial { width: min(82vh, 440px); }
   .timer { font-size: clamp(4.6rem, 20vh, 7rem); }
   .timer-action { margin-top: 18px; }
-  .controls { width: min(82vh, 440px); margin-top: -8px; }
+  .controls { margin-top: -8px; }
 }
 
 @media (max-width: 390px) {
