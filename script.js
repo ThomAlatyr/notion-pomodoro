@@ -1,117 +1,145 @@
 (() => {
   "use strict";
 
-  const dayNumber = document.querySelector("#dayNumber");
-  const monthName = document.querySelector("#monthName");
-  const year = document.querySelector("#year");
-  const weekday = document.querySelector("#weekday");
-  const days = document.querySelector("#days");
-  const previousMonth = document.querySelector("#previousMonth");
-  const nextMonth = document.querySelector("#nextMonth");
-  const todayButton = document.querySelector("#todayButton");
+  const TOTAL_SECONDS = 25 * 60;
+  const timer = document.querySelector("#timer");
+  const timerToggle = document.querySelector("#timerToggle");
+  const timerAction = document.querySelector("#timerAction");
+  const pauseButton = document.querySelector("#pauseButton");
+  const resetButton = document.querySelector("#resetButton");
+  const status = document.querySelector("#status");
+  const tickRing = document.querySelector("#tickRing");
+  const TICK_COUNT = 30;
 
-  const monthFormatter = new Intl.DateTimeFormat("fr-FR", { month: "long" });
-  const weekdayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
-  const spokenFormatter = new Intl.DateTimeFormat("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+  let remaining = TOTAL_SECONDS;
+  let state = "idle";
+  let endTime = 0;
+  let intervalId = null;
+  let audioContext = null;
+
+  const ticks = Array.from({ length: TICK_COUNT }, (_, index) => {
+    const tick = document.createElement("span");
+    tick.className = "tick";
+    tick.style.setProperty("--angle", `${180 - index * 360 / TICK_COUNT}deg`);
+    tickRing.append(tick);
+    return tick;
   });
 
-  const now = startOfDay(new Date());
-  let selected = new Date(now);
-  let visibleMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  function startOfDay(date) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  }
-
-  function sameDay(left, right) {
-    return left.getFullYear() === right.getFullYear()
-      && left.getMonth() === right.getMonth()
-      && left.getDate() === right.getDate();
-  }
-
-  function capitalize(value) {
-    return value.charAt(0).toUpperCase() + value.slice(1);
-  }
-
-  function renderSummary() {
-    dayNumber.textContent = selected.getDate();
-    dayNumber.dateTime = selected.toISOString().slice(0, 10);
-    monthName.textContent = monthFormatter.format(selected);
-    year.textContent = selected.getFullYear();
-    weekday.textContent = capitalize(weekdayFormatter.format(selected).replace(".", ""));
-  }
-
-  function renderCalendar() {
-    days.replaceChildren();
-
-    const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
-    const mondayOffset = (monthStart.getDay() + 6) % 7;
-    const gridStart = new Date(monthStart);
-    gridStart.setDate(monthStart.getDate() - mondayOffset);
-
-    for (let index = 0; index < 42; index += 1) {
-      const date = new Date(gridStart);
-      date.setDate(gridStart.getDate() + index);
-
-      const button = document.createElement("button");
-      const label = document.createElement("span");
-      const isOutside = date.getMonth() !== visibleMonth.getMonth();
-
-      button.type = "button";
-      button.className = "day";
-      button.setAttribute("role", "gridcell");
-      button.dataset.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-      button.title = spokenFormatter.format(date);
-
-      if (date < now && !isOutside) button.classList.add("past");
-      if (sameDay(date, now)) {
-        button.classList.add("today");
-        button.setAttribute("aria-current", "date");
-      }
-      if (sameDay(date, selected)) button.classList.add("selected");
-      if (isOutside) button.classList.add("outside");
-
-      label.className = "day-label";
-      label.textContent = spokenFormatter.format(date);
-      button.append(label);
-      button.addEventListener("click", () => selectDate(date));
-      days.append(button);
-    }
-
-    const visibleLabel = capitalize(monthFormatter.format(visibleMonth));
-    days.setAttribute("aria-label", `${visibleLabel} ${visibleMonth.getFullYear()}`);
-  }
-
-  function selectDate(date) {
-    selected = startOfDay(date);
-    visibleMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
-    render();
-  }
-
-  function changeMonth(offset) {
-    visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
-    selected = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
-    render();
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
   }
 
   function render() {
-    renderSummary();
-    renderCalendar();
-    document.title = `${selected.getDate()} ${monthFormatter.format(selected)} · Calendrier`;
+    const elapsed = TOTAL_SECONDS - remaining;
+    const progress = Math.min(100, Math.max(0, elapsed / TOTAL_SECONDS * 100));
+    const elapsedTicks = Math.ceil(progress / 100 * TICK_COUNT);
+
+    timer.textContent = formatTime(remaining);
+    timer.dateTime = `PT${remaining}S`;
+    status.textContent = remaining === 0 ? "Terminé" : "";
+    timerAction.textContent = state === "running" ? "En cours" : state === "paused" ? "Reprendre" : remaining === 0 ? "Recommencer" : "Démarrer";
+    timerAction.disabled = state === "running";
+    timerAction.setAttribute("aria-label", state === "paused" ? "Reprendre le minuteur" : "Démarrer le minuteur");
+    timerToggle.setAttribute("aria-label", state === "running" ? "Mettre le minuteur en pause" : state === "paused" ? "Reprendre le minuteur" : "Démarrer le minuteur");
+    pauseButton.disabled = state !== "running";
+
+    ticks.forEach((tick, index) => tick.classList.toggle("elapsed", index < elapsedTicks));
+    tickRing.setAttribute("aria-valuenow", String(elapsed));
+    tickRing.setAttribute("aria-valuetext", `${Math.round(progress)} % écoulés`);
+    document.title = `${formatTime(remaining)} · Pomodoro`;
   }
 
-  previousMonth.addEventListener("click", () => changeMonth(-1));
-  nextMonth.addEventListener("click", () => changeMonth(1));
-  todayButton.addEventListener("click", () => selectDate(now));
+  function tick() {
+    remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+    render();
+    if (remaining === 0) completeTimer();
+  }
+
+  function startTimer() {
+    if (state === "running") return;
+    if (remaining === 0) remaining = TOTAL_SECONDS;
+    unlockAudio();
+    endTime = Date.now() + remaining * 1000;
+    state = "running";
+    clearInterval(intervalId);
+    intervalId = window.setInterval(tick, 250);
+    render();
+  }
+
+  function pauseTimer() {
+    if (state !== "running") return;
+    remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+    clearInterval(intervalId);
+    intervalId = null;
+    state = "paused";
+    render();
+  }
+
+  function resetTimer() {
+    clearInterval(intervalId);
+    intervalId = null;
+    remaining = TOTAL_SECONDS;
+    state = "idle";
+    render();
+  }
+
+  function toggleTimer() {
+    state === "running" ? pauseTimer() : startTimer();
+  }
+
+  function completeTimer() {
+    clearInterval(intervalId);
+    intervalId = null;
+    state = "idle";
+    signal();
+    render();
+  }
+
+  function unlockAudio() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      audioContext ||= new AudioContext();
+      if (audioContext.state === "suspended") audioContext.resume();
+    } catch {
+      audioContext = null;
+    }
+  }
+
+  function signal() {
+    try {
+      unlockAudio();
+      if (!audioContext) return;
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.frequency.value = 720;
+      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.06, audioContext.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.35);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.36);
+    } catch {
+      // Certains navigateurs exigent une interaction avant d'autoriser le son.
+    }
+  }
+
+  timerAction.addEventListener("click", startTimer);
+  timerToggle.addEventListener("click", toggleTimer);
+  pauseButton.addEventListener("click", pauseTimer);
+  resetButton.addEventListener("click", resetTimer);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && state === "running") tick();
+  });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-    if (event.target.closest(".day")) return;
-    changeMonth(event.key === "ArrowLeft" ? -1 : 1);
+    if (event.code !== "Space" || event.target.closest("button")) return;
+    event.preventDefault();
+    toggleTimer();
   });
 
   render();

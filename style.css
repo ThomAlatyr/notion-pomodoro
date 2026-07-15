@@ -1,11 +1,10 @@
 :root {
   color-scheme: light;
-  font-family: Inter, Arial, Helvetica, sans-serif;
+  font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
   font-synthesis: none;
-  --paper: #e7e4df;
   --ink: #171717;
-  --muted: #b9b6b1;
-  --line: #cfccc7;
+  --line: #d8d8d8;
+  --secondary: #8a8883;
   --accent: #ff681e;
 }
 
@@ -13,198 +12,165 @@
 
 html,
 body {
-  min-width: 250px;
+  min-width: 280px;
   min-height: 100%;
   margin: 0;
-  background: var(--paper);
+  background: transparent;
 }
 
 body {
   color: var(--ink);
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
 
-button { color: inherit; font: inherit; }
+button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
 
 .widget {
   display: grid;
   min-height: 100vh;
   min-height: 100dvh;
   place-items: center;
-  padding: clamp(20px, 7vw, 46px);
+  padding: clamp(12px, 4vw, 30px);
 }
 
-.calendar-card {
-  width: min(100%, 420px);
+.pomodoro-card {
+  width: min(100%, 540px);
+  text-align: center;
 }
 
-.date-summary {
-  margin-bottom: clamp(30px, 9vh, 68px);
+.dial {
+  position: relative;
+  width: min(100%, 510px);
+  aspect-ratio: 1;
+  margin: auto;
 }
 
-.day-number {
+.tick-ring,
+.dial-center {
+  position: absolute;
+  inset: 0;
+}
+
+.tick-ring { border-radius: 50%; }
+
+.tick {
+  --tick-color: var(--line);
+  position: absolute;
+  top: 50%;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  height: 48%;
+  transform: rotate(var(--angle));
+  transform-origin: 50% 0;
+  background: linear-gradient(to bottom, transparent 0 76%, var(--tick-color) 76% 100%);
+  transition: background 180ms ease;
+}
+
+.tick.elapsed { --tick-color: var(--accent); }
+
+.dial-center {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding-bottom: 2%;
+}
+
+.focus-title {
+  margin: 0 0 clamp(12px, 3vw, 22px);
+  color: var(--secondary);
+  font-size: clamp(1rem, 3.2vw, 1.35rem);
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  text-transform: none;
+}
+
+.timer {
   display: block;
-  margin-left: -0.055em;
-  font-size: clamp(7.5rem, 35vw, 11rem);
-  font-weight: 800;
-  letter-spacing: -0.11em;
-  line-height: 0.78;
+  font-size: clamp(5.6rem, 23vw, 8.8rem);
+  font-weight: 300;
+  letter-spacing: -0.085em;
+  line-height: 0.82;
+  text-indent: -0.085em;
   font-variant-numeric: tabular-nums;
 }
 
-.date-line {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-top: clamp(32px, 8vw, 48px);
-}
-
-.month-name,
-.year,
-.weekday {
-  margin: 0;
-  line-height: 1;
-}
-
-.month-name {
-  font-size: clamp(1.55rem, 7.2vw, 2.25rem);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
-}
-
-.year {
-  margin-top: 7px;
-  color: #4e4c49;
-  font-size: clamp(1.45rem, 6.5vw, 2rem);
-  font-weight: 400;
-  letter-spacing: -0.035em;
-}
-
-.weekday {
-  color: #615f5b;
-  font-size: clamp(1.35rem, 6vw, 1.8rem);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-}
-
-.calendar-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-height: 29px;
-  margin-bottom: 8px;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.calendar-card:hover .calendar-toolbar,
-.calendar-card:focus-within .calendar-toolbar { opacity: 1; }
-
-.nav-button,
-.today-button {
+.timer-toggle {
+  display: block;
+  padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
 }
 
-.nav-button {
-  display: grid;
-  width: 29px;
-  height: 29px;
-  place-items: center;
-  border-radius: 50%;
-  color: #696762;
-  font-size: 0.92rem;
-}
+.timer-toggle:hover .timer { color: #30302f; }
 
-.today-button {
-  margin: 0 4px;
-  padding: 5px 8px;
-  border-radius: 14px;
-  color: #696762;
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.nav-button:hover,
-.today-button:hover { background: rgba(23, 23, 23, 0.07); color: var(--ink); }
-
-.weekdays,
-.days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.weekdays {
-  margin-bottom: 9px;
-  color: #67645f;
-  font-size: clamp(0.58rem, 2.5vw, 0.7rem);
-  font-weight: 700;
-  text-align: center;
-}
-
-.weekdays span { line-height: 1; }
-
-.days { gap: clamp(4px, 1.5vw, 8px); }
-
-.day {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
+.timer-action {
+  margin-top: clamp(24px, 6vw, 38px);
   padding: 0;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: var(--muted);
-  cursor: pointer;
-  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
-}
-
-.day.past { background: var(--ink); }
-.day.today { background: var(--accent); }
-.day.outside { border-color: var(--line); background: transparent; }
-.day.selected:not(.today) { box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 5px var(--ink); }
-.day.outside.selected { box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 5px #77746f; }
-
-.day:hover { transform: scale(0.91); }
-.day:active { transform: scale(0.84); }
-
-.day:focus-visible,
-.nav-button:focus-visible,
-.today-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-.day-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
   border: 0;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-@media (hover: none) {
-  .calendar-toolbar { opacity: 1; }
+.timer-action:hover { color: var(--accent); }
+
+.status {
+  position: absolute;
+  right: 0;
+  bottom: 2%;
+  left: 0;
+  margin: 0;
+  color: var(--secondary);
+  font-size: clamp(0.82rem, 2.5vw, 1.05rem);
+  font-weight: 300;
+  line-height: 1;
 }
 
-@media (max-height: 670px) {
-  .widget { padding-block: 18px; }
-  .date-summary { margin-bottom: 20px; }
-  .day-number { font-size: clamp(5.8rem, 28vh, 9rem); }
-  .date-line { margin-top: 24px; }
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(100%, 510px);
+  margin: -4px auto 0;
 }
 
-@media (max-width: 300px) {
-  .widget { padding-inline: 14px; }
-  .days { gap: 3px; }
+.control {
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.control:hover:not(:disabled) { color: var(--ink); }
+.control:disabled { cursor: default; opacity: 0.3; }
+.control:first-child { justify-self: start; text-align: left; }
+.control:last-child { justify-self: end; text-align: right; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+@media (max-height: 650px) {
+  .dial { width: min(82vh, 440px); }
+  .timer { font-size: clamp(4.6rem, 20vh, 7rem); }
+  .timer-action { margin-top: 18px; }
+  .controls { width: min(82vh, 440px); margin-top: -8px; }
+}
+
+@media (max-width: 390px) {
+  .widget { padding-inline: 8px; }
+  .tick { left: calc(50% - 1px); width: 2px; }
+  .timer { font-size: clamp(4.2rem, 24vw, 5.6rem); }
+  .timer-action { margin-top: 18px; font-size: 0.62rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
