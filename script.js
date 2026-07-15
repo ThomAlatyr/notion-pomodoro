@@ -139,7 +139,7 @@
   document.addEventListener("keydown", (event) => {
     if (event.code !== "Space" || event.target.closest("button")) return;
     event.preventDefault();
-    state === "running" ? pauseTimer() : startTimer();
+    toggleTimer();
   });
 
   render();
