@@ -1,207 +1,117 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "notion-pomodoro-preferences-v1";
-  const MODES = {
-    focus: { seconds: 25 * 60, label: "Concentration", ready: "Prêt à se concentrer" },
-    short: { seconds: 5 * 60, label: "Pause courte", ready: "Prêt pour une pause" },
-    long: { seconds: 15 * 60, label: "Pause longue", ready: "Prêt pour une pause" },
-  };
+  const dayNumber = document.querySelector("#dayNumber");
+  const monthName = document.querySelector("#monthName");
+  const year = document.querySelector("#year");
+  const weekday = document.querySelector("#weekday");
+  const days = document.querySelector("#days");
+  const previousMonth = document.querySelector("#previousMonth");
+  const nextMonth = document.querySelector("#nextMonth");
+  const todayButton = document.querySelector("#todayButton");
 
-  const timer = document.querySelector("#timer");
-  const timerRing = document.querySelector("#timerRing");
-  const timerStatus = document.querySelector("#timerStatus");
-  const timerMode = document.querySelector("#timerMode");
-  const sessionCount = document.querySelector("#sessionCount");
-  const startButton = document.querySelector("#startButton");
-  const pauseButton = document.querySelector("#pauseButton");
-  const resetButton = document.querySelector("#resetButton");
-  const soundToggle = document.querySelector("#soundToggle");
-  const clearSessions = document.querySelector("#clearSessions");
-  const modeButtons = [...document.querySelectorAll(".mode")];
+  const monthFormatter = new Intl.DateTimeFormat("fr-FR", { month: "long" });
+  const weekdayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
+  const spokenFormatter = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-  const stored = loadPreferences();
-  let mode = MODES[stored.mode] ? stored.mode : "focus";
-  let soundEnabled = stored.soundEnabled !== false;
-  let sessions = Number.isInteger(stored.sessions) && stored.sessions >= 0 ? stored.sessions : 0;
-  let remaining = MODES[mode].seconds;
-  let endTime = 0;
-  let intervalId = null;
-  let state = "idle";
-  let transientStatus = "";
-  let audioContext = null;
+  const now = startOfDay(new Date());
+  let selected = new Date(now);
+  let visibleMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  function loadPreferences() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    } catch {
-      return {};
-    }
+  function startOfDay(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
-  function savePreferences() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode, soundEnabled, sessions }));
-    } catch {
-      // Le widget reste utilisable si le stockage est bloqué dans l'iframe.
-    }
+  function sameDay(left, right) {
+    return left.getFullYear() === right.getFullYear()
+      && left.getMonth() === right.getMonth()
+      && left.getDate() === right.getDate();
   }
 
-  function formatTime(totalSeconds) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  function capitalize(value) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  function renderSummary() {
+    dayNumber.textContent = selected.getDate();
+    dayNumber.dateTime = selected.toISOString().slice(0, 10);
+    monthName.textContent = monthFormatter.format(selected);
+    year.textContent = selected.getFullYear();
+    weekday.textContent = capitalize(weekdayFormatter.format(selected).replace(".", ""));
+  }
+
+  function renderCalendar() {
+    days.replaceChildren();
+
+    const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+    const mondayOffset = (monthStart.getDay() + 6) % 7;
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(monthStart.getDate() - mondayOffset);
+
+    for (let index = 0; index < 42; index += 1) {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + index);
+
+      const button = document.createElement("button");
+      const label = document.createElement("span");
+      const isOutside = date.getMonth() !== visibleMonth.getMonth();
+
+      button.type = "button";
+      button.className = "day";
+      button.setAttribute("role", "gridcell");
+      button.dataset.date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      button.title = spokenFormatter.format(date);
+
+      if (date < now && !isOutside) button.classList.add("past");
+      if (sameDay(date, now)) {
+        button.classList.add("today");
+        button.setAttribute("aria-current", "date");
+      }
+      if (sameDay(date, selected)) button.classList.add("selected");
+      if (isOutside) button.classList.add("outside");
+
+      label.className = "day-label";
+      label.textContent = spokenFormatter.format(date);
+      button.append(label);
+      button.addEventListener("click", () => selectDate(date));
+      days.append(button);
+    }
+
+    const visibleLabel = capitalize(monthFormatter.format(visibleMonth));
+    days.setAttribute("aria-label", `${visibleLabel} ${visibleMonth.getFullYear()}`);
+  }
+
+  function selectDate(date) {
+    selected = startOfDay(date);
+    visibleMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
+    render();
+  }
+
+  function changeMonth(offset) {
+    visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
+    selected = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+    render();
   }
 
   function render() {
-    const total = MODES[mode].seconds;
-    const elapsedRatio = Math.min(1, Math.max(0, (total - remaining) / total));
-    timer.textContent = formatTime(remaining);
-    timer.dateTime = `PT${remaining}S`;
-    timerRing.style.setProperty("--progress", `${elapsedRatio * 360}deg`);
-    timerMode.textContent = MODES[mode].label;
-    sessionCount.textContent = sessions;
-
-    const statusText = transientStatus || (state === "running" ? "En cours" : state === "paused" ? "En pause" : MODES[mode].ready);
-    timerStatus.textContent = statusText;
-    document.title = `${formatTime(remaining)} · ${MODES[mode].label}`;
-
-    startButton.textContent = state === "paused" ? "Reprendre" : "Start";
-    startButton.disabled = state === "running";
-    pauseButton.disabled = state !== "running";
-
-    modeButtons.forEach((button) => {
-      const active = button.dataset.mode === mode;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-
-    soundToggle.setAttribute("aria-pressed", String(soundEnabled));
-    soundToggle.setAttribute("aria-label", soundEnabled ? "Désactiver le son" : "Activer le son");
+    renderSummary();
+    renderCalendar();
+    document.title = `${selected.getDate()} ${monthFormatter.format(selected)} · Calendrier`;
   }
 
-  function tick() {
-    remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-    render();
+  previousMonth.addEventListener("click", () => changeMonth(-1));
+  nextMonth.addEventListener("click", () => changeMonth(1));
+  todayButton.addEventListener("click", () => selectDate(now));
 
-    if (remaining === 0) completeTimer();
-  }
-
-  function startTimer() {
-    if (state === "running") return;
-    transientStatus = "";
-    unlockAudio();
-    endTime = Date.now() + remaining * 1000;
-    state = "running";
-    clearInterval(intervalId);
-    intervalId = window.setInterval(tick, 250);
-    render();
-  }
-
-  function pauseTimer() {
-    if (state !== "running") return;
-    remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-    clearInterval(intervalId);
-    intervalId = null;
-    state = "paused";
-    render();
-  }
-
-  function resetTimer() {
-    clearInterval(intervalId);
-    intervalId = null;
-    remaining = MODES[mode].seconds;
-    state = "idle";
-    transientStatus = "";
-    render();
-  }
-
-  function completeTimer() {
-    clearInterval(intervalId);
-    intervalId = null;
-    state = "idle";
-
-    if (mode === "focus") {
-      sessions += 1;
-      savePreferences();
-    }
-
-    playSignal();
-    remaining = MODES[mode].seconds;
-    transientStatus = mode === "focus" ? "Session terminée" : "Pause terminée";
-    render();
-  }
-
-  function unlockAudio() {
-    if (!soundEnabled) return;
-
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      audioContext ||= new AudioContext();
-      if (audioContext.state === "suspended") audioContext.resume();
-    } catch {
-      audioContext = null;
-    }
-  }
-
-  function playSignal() {
-    if (!soundEnabled) return;
-
-    try {
-      unlockAudio();
-      if (!audioContext) return;
-      const now = audioContext.currentTime;
-
-      [0, 0.22].forEach((delay, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        oscillator.type = "sine";
-        oscillator.frequency.value = index === 0 ? 660 : 780;
-        gain.gain.setValueAtTime(0.0001, now + delay);
-        gain.gain.exponentialRampToValueAtTime(0.055, now + delay + 0.025);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.18);
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-        oscillator.start(now + delay);
-        oscillator.stop(now + delay + 0.2);
-      });
-
-    } catch {
-      // Certains navigateurs exigent une interaction avant d'autoriser le son.
-    }
-  }
-
-  function selectMode(nextMode) {
-    if (!MODES[nextMode] || nextMode === mode) return;
-    mode = nextMode;
-    savePreferences();
-    resetTimer();
-  }
-
-  startButton.addEventListener("click", startTimer);
-  pauseButton.addEventListener("click", pauseTimer);
-  resetButton.addEventListener("click", resetTimer);
-
-  modeButtons.forEach((button) => {
-    button.addEventListener("click", () => selectMode(button.dataset.mode));
-  });
-
-  soundToggle.addEventListener("click", () => {
-    soundEnabled = !soundEnabled;
-    if (soundEnabled) unlockAudio();
-    savePreferences();
-    render();
-  });
-
-  clearSessions.addEventListener("click", () => {
-    sessions = 0;
-    savePreferences();
-    render();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && state === "running") tick();
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    if (event.target.closest(".day")) return;
+    changeMonth(event.key === "ArrowLeft" ? -1 : 1);
   });
 
   render();
