@@ -1,0 +1,350 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  --background: #131313;
+  --surface: #191919;
+  --surface-raised: #202020;
+  --text: #ededed;
+  --muted: #8f8f8f;
+  --accent: #fc7428;
+  --accent-soft: rgba(252, 116, 40, 0.14);
+  --line: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 280px;
+  min-height: 100%;
+  margin: 0;
+  background: #ffffff;
+}
+
+body {
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.widget {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  place-items: center;
+  padding: clamp(10px, 3vw, 24px);
+}
+
+.pomodoro-card {
+  width: min(100%, 430px);
+  padding: clamp(16px, 4vw, 24px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(252, 116, 40, 0.08), transparent 42%),
+    var(--background);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.18), inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.topbar,
+.brand,
+.sound-toggle,
+.stats,
+.stats > div {
+  display: flex;
+  align-items: center;
+}
+
+.topbar {
+  justify-content: space-between;
+}
+
+.brand {
+  gap: 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.brand-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft), 0 0 16px rgba(252, 116, 40, 0.5);
+}
+
+.sound-toggle,
+.clear-sessions {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.sound-toggle {
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.sound-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sound-toggle[aria-pressed="false"] .sound-icon {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+.mode-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 18px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 13px;
+  background: #141414;
+}
+
+.mode {
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+  transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.mode:hover {
+  color: var(--text);
+}
+
+.mode.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px rgba(252, 116, 40, 0.14);
+}
+
+.timer-wrap {
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 7vh, 38px) 0;
+}
+
+.timer-ring {
+  position: relative;
+  display: grid;
+  width: clamp(188px, 58vw, 238px);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--progress), rgba(255, 255, 255, 0.065) 0);
+  box-shadow: 0 0 38px rgba(252, 116, 40, 0.07);
+}
+
+.timer-ring::before {
+  position: absolute;
+  inset: 7px;
+  border-radius: inherit;
+  background: #181818;
+  box-shadow: inset 0 0 32px rgba(0, 0, 0, 0.28);
+  content: "";
+}
+
+.timer-ring::after {
+  position: absolute;
+  top: 1px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(252, 116, 40, 0.7);
+  content: "";
+}
+
+.timer-face {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+
+.timer-status,
+.timer-mode {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+}
+
+.timer-status {
+  min-height: 1em;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.timer {
+  font-size: clamp(3.25rem, 15vw, 4.45rem);
+  font-weight: 680;
+  letter-spacing: -0.075em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-indent: -0.075em;
+}
+
+.timer-mode {
+  margin-top: 9px;
+  color: var(--accent);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1.16fr 1fr;
+  gap: 8px;
+}
+
+.control {
+  min-height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.control:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.control-primary {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #1b1009;
+  box-shadow: 0 8px 25px rgba(252, 116, 40, 0.18);
+}
+
+.control-primary:hover {
+  background: #ff8647;
+}
+
+.control-secondary {
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.control-secondary:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #252525;
+}
+
+.control:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.stats {
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+
+.stats > div {
+  gap: 10px;
+}
+
+.stats-label {
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.stats-value {
+  display: grid;
+  min-width: 25px;
+  height: 25px;
+  place-items: center;
+  padding: 0 7px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 0.79rem;
+}
+
+.clear-sessions {
+  padding: 5px;
+  color: #6f6f6f;
+  font-size: 0.7rem;
+}
+
+.clear-sessions:hover {
+  color: var(--text);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-height: 560px) {
+  .widget {
+    place-items: start center;
+  }
+
+  .timer-wrap {
+    padding-block: 15px;
+  }
+
+  .timer-ring {
+    width: 180px;
+  }
+
+  .stats {
+    margin-top: 13px;
+    padding-top: 11px;
+  }
+}
+
+@media (max-width: 340px) {
+  .pomodoro-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .sound-label {
+    display: none;
+  }
+
+  .control {
+    min-height: 42px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

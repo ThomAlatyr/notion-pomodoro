@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#131313" />
+    <meta name="color-scheme" content="dark" />
+    <title>Pomodoro</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="widget" aria-label="Minuteur Pomodoro">
+      <section class="pomodoro-card">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>Focus timer</span>
+          </div>
+
+          <button class="sound-toggle" id="soundToggle" type="button" aria-label="Désactiver le son" aria-pressed="true">
+            <span class="sound-icon" aria-hidden="true">◖</span>
+            <span class="sound-label">Son</span>
+          </button>
+        </header>
+
+        <nav class="mode-switcher" aria-label="Choisir un mode">
+          <button class="mode active" type="button" data-mode="focus" aria-pressed="true">Focus</button>
+          <button class="mode" type="button" data-mode="short" aria-pressed="false">Courte</button>
+          <button class="mode" type="button" data-mode="long" aria-pressed="false">Longue</button>
+        </nav>
+
+        <div class="timer-wrap">
+          <div class="timer-ring" id="timerRing" style="--progress: 0deg">
+            <div class="timer-face">
+              <span class="timer-status" id="timerStatus">Prêt à se concentrer</span>
+              <time class="timer" id="timer" datetime="PT25M" aria-live="off">25:00</time>
+              <span class="timer-mode" id="timerMode">Concentration</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="Commandes du minuteur">
+          <button class="control control-secondary" id="pauseButton" type="button" disabled>Pause</button>
+          <button class="control control-primary" id="startButton" type="button">Start</button>
+          <button class="control control-secondary" id="resetButton" type="button">Reset</button>
+        </div>
+
+        <div class="stats" aria-label="Statistiques">
+          <div>
+            <span class="stats-label">Sessions terminées</span>
+            <strong class="stats-value" id="sessionCount">0</strong>
+          </div>
+          <button class="clear-sessions" id="clearSessions" type="button" aria-label="Remettre le compteur de sessions à zéro">Effacer</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
