@@ -37,6 +37,9 @@ button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent
 
 .pomodoro-card {
   width: min(100%, 540px);
+  padding: clamp(20px, 4vw, 30px);
+  border-radius: 30px;
+  background: #e8e7e3;
   text-align: center;
 }
 
@@ -56,7 +59,7 @@ button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent
 .tick-ring { border-radius: 50%; }
 
 .tick {
-  --tick-color: var(--line);
+  --tick-color: var(--ink);
   position: absolute;
   top: 50%;
   left: calc(50% - 1.5px);
@@ -123,17 +126,6 @@ button { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent
 .timer-action:hover { color: var(--accent); }
 .timer-action:disabled { color: var(--accent); cursor: default; opacity: 1; }
 
-.status {
-  position: absolute;
-  right: 0;
-  bottom: 2%;
-  left: 0;
-  margin: 0;
-  color: var(--secondary);
-  font-size: clamp(1.08rem, 3.1vw, 1.34rem);
-  font-weight: 300;
-  line-height: 1;
-}
 
 .controls {
   display: grid;

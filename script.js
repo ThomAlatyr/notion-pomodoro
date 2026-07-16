@@ -7,7 +7,6 @@
   const timerAction = document.querySelector("#timerAction");
   const pauseButton = document.querySelector("#pauseButton");
   const resetButton = document.querySelector("#resetButton");
-  const status = document.querySelector("#status");
   const tickRing = document.querySelector("#tickRing");
   const TICK_COUNT = 30;
 
@@ -20,7 +19,7 @@
   const ticks = Array.from({ length: TICK_COUNT }, (_, index) => {
     const tick = document.createElement("span");
     tick.className = "tick";
-    tick.style.setProperty("--angle", `${180 - index * 360 / TICK_COUNT}deg`);
+    tick.style.setProperty("--angle", `${180 + index * 360 / TICK_COUNT}deg`);
     tickRing.append(tick);
     return tick;
   });
@@ -38,10 +37,9 @@
 
     timer.textContent = formatTime(remaining);
     timer.dateTime = `PT${remaining}S`;
-    status.textContent = remaining === 0 ? "Terminé" : "";
-    timerAction.textContent = state === "running" ? "En cours" : state === "paused" ? "Reprendre" : remaining === 0 ? "Recommencer" : "Démarrer";
+    timerAction.textContent = remaining === 0 ? "Terminé" : state === "running" ? "En cours" : state === "paused" ? "Reprendre" : "Démarrer";
     timerAction.disabled = state === "running";
-    timerAction.setAttribute("aria-label", state === "paused" ? "Reprendre le minuteur" : "Démarrer le minuteur");
+    timerAction.setAttribute("aria-label", remaining === 0 ? "Recommencer le minuteur" : state === "paused" ? "Reprendre le minuteur" : "Démarrer le minuteur");
     timerToggle.setAttribute("aria-label", state === "running" ? "Mettre le minuteur en pause" : state === "paused" ? "Reprendre le minuteur" : "Démarrer le minuteur");
     pauseButton.disabled = state !== "running";
 
